@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react';
 import { getDrugs, deleteDrug } from '../services/DrugService';
 import DrugCard from '../components/DrugCard';
-import { useNavigate } from 'react-router-dom'
-
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
   const [drugs, setDrugs] = useState([]);
-const navigate = useNavigate();
+  const navigate = useNavigate();
+
+  const fetchDrugs = async () => {
+    try {
+      const data = await getDrugs();
+      setDrugs(data);
+    } catch (error) {
+      console.error('Error fetching drugs:', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchDrugs = async () => {
-      try {
-        const data = await getDrugs();
-        setDrugs(data);
-      } catch (error) {
-        console.error('Error fetching drugs:', error);
-      }
-    };
     fetchDrugs();
   }, []);
 
@@ -30,7 +30,16 @@ const navigate = useNavigate();
   };
 
   const handleEdit = (id) => {
-      navigate(`/edit/${id}`);
+    navigate(`/edit/${id}`);
+  };
+
+  //  calculate the real-time status of each drug
+  const getDrugStatus = (drug) => {
+    const today = new Date();
+    const expiryDate = new Date(drug.expiry_date);
+    const isExpiringSoon = (expiryDate - today) / (1000 * 60 * 60 * 24) <= 30;
+    const isLowStock = drug.stock < drug.reorder_level;
+    return { isExpiringSoon, isLowStock };
   };
 
   return (
@@ -43,6 +52,7 @@ const navigate = useNavigate();
             drug={drug}
             onDelete={handleDelete}
             onEdit={handleEdit}
+            status={getDrugStatus(drug)} // 🔁 Always compute status here
           />
         ))}
       </div>
