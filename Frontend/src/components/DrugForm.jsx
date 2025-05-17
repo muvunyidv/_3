@@ -9,6 +9,8 @@ const DrugForm = ({ drug, onSave }) => {
     reorder_level: 0,
   });
 
+  const [errors, setErrors] = useState({});
+
   useEffect(() => {
     if (drug) {
       setFormData({
@@ -23,6 +25,24 @@ const DrugForm = ({ drug, onSave }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // For stock and reorder_level, ensure value is non-negative
+    if ((name === 'stock' || name === 'reorder_level')) {
+      const numValue = parseInt(value);
+      if (numValue < 0) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: 'Value cannot be negative'
+        }));
+        return;
+      } else {
+        setErrors(prev => ({
+          ...prev,
+          [name]: undefined
+        }));
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -31,6 +51,21 @@ const DrugForm = ({ drug, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Final validation before submission
+    const newErrors = {};
+    if (parseInt(formData.stock) < 0) {
+      newErrors.stock = 'Stock cannot be negative';
+    }
+    if (parseInt(formData.reorder_level) < 0) {
+      newErrors.reorder_level = 'Reorder level cannot be negative';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     onSave(formData);
   };
 
@@ -65,9 +100,13 @@ const DrugForm = ({ drug, onSave }) => {
           name="stock"
           value={formData.stock}
           onChange={handleChange}
-          className="w-full p-2 border rounded-md"
+          min="0"
+          className={`w-full p-2 border rounded-md ${errors.stock ? 'border-red-500' : ''}`}
           required
         />
+        {errors.stock && (
+          <p className="text-red-500 text-sm mt-1">{errors.stock}</p>
+        )}
       </div>
       <div>
         <label className="block text-sm font-semibold">Expiry Date</label>
@@ -87,9 +126,13 @@ const DrugForm = ({ drug, onSave }) => {
           name="reorder_level"
           value={formData.reorder_level}
           onChange={handleChange}
-          className="w-full p-2 border rounded-md"
+          min="0"
+          className={`w-full p-2 border rounded-md ${errors.reorder_level ? 'border-red-500' : ''}`}
           required
         />
+        {errors.reorder_level && (
+          <p className="text-red-500 text-sm mt-1">{errors.reorder_level}</p>
+        )}
       </div>
       <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded-md">
         Save
